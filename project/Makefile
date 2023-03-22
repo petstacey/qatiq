@@ -1,13 +1,14 @@
 BROKER_BINARY = brokerService
 AUTH_BINARY = authenticationService
 LOGGER_BINARY = loggerService
+LISTENER_BINARY = listenerService
 
 up:
 	@echo "Starting Docker images..."
 	docker-compose up -d
 	@echo "Docker images started!"
 
-up_build: build_broker build_auth build_logger
+up_build: build_broker build_auth build_logger build_listener
 	@echo "Stopping docker images (if running)..."
 	docker-compose down
 	@echo "Building (as required) and starting docked images..."
@@ -32,4 +33,9 @@ build_auth:
 build_logger:
 	@echo "Building logger binary..."
 	cd ../logger-service && env GOOS=linux CGO_ENABLED=0 go build -o ${LOGGER_BINARY} ./cmd/api
+	@echo "Done!"
+
+build_listener:
+	@echo "Building listener binary..."
+	cd ../listener-service && env GOOS=linux CGO_ENABLED=0 go build -o ${LISTENER_BINARY} .
 	@echo "Done!"

@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+
+	"github.com/pso-dev/qatiq/backend/broker-service/cmd/api/event"
 )
 
 type RequestPayload struct {
@@ -90,7 +92,7 @@ func (b *broker) handleRequest() http.HandlerFunc {
 		case "auth":
 			b.authenticateUser(w, payload.Auth)
 		case "log":
-			b.logItem(w, payload.Log)
+			b.logRabbitEvent(w, payload.Log)
 		default:
 			b.errorJSON(w, errors.New("unknown action"))
 		}
@@ -182,4 +184,38 @@ func (b *broker) logItem(w http.ResponseWriter, entry LogPayload) {
 	payload.Message = "logged"
 
 	b.writeJSON(w, http.StatusAccepted, payload)
+}
+
+func (b *broker) logRabbitEvent(w http.ResponseWriter, l LogPayload) {
+	err := b.pushToQueue(l.Name, l.Data)
+	if err != nil {
+		b.errorJSON(w, err)
+		return
+	}
+	var payload JSONResponse
+	payload.Message = "logged via RabbitMQ"
+	err = b.writeJSON(w, http.StatusOK, payload, nil)
+	if err != nil {
+		b.errorJSON(w, err)
+	}
+}
+
+func (b *broker) pushToQueue(name, message string) error {
+	emitter, err := event.NewEventEmitter(b.rabbit)
+	if err != nil {
+		return err
+	}
+	payload := LogPayload{
+		Name: name,
+		Data: message,
+	}
+	j, err := json.Marshal(&payload)
+	if err != nil {
+		return err
+	}
+	err = emitter.Push(string(j), "log.INFO")
+	if err != nil {
+		return err
+	}
+	return nil
 }

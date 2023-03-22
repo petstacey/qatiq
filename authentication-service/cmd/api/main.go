@@ -65,7 +65,7 @@ func run(args []string) error {
 	}
 	defer db.Close()
 
-	app.service = &service.Service{DB: db}
+	app.service = &service.Service{Name: "authentication-service", DB: db}
 	return app.serve()
 }
 

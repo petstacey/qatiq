@@ -58,11 +58,11 @@ func run(args []string) error {
 	if err != nil {
 		log.Panic(err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	defer func() {
 		if err = client.Disconnect(ctx); err != nil {
-			panic(err)
+			panic(err) // add recover panic middleware
 		}
 	}()
 	app.service = &service.Service{DB: client}

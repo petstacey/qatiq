@@ -24,26 +24,18 @@ func (a *api) serve() error {
 		quit := make(chan os.Signal, 1)
 		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 		q := <-quit
-
-		fmt.Printf("caught signal %s", map[string]string{
-			"signal": q.String(),
-		})
+		a.logRequest(a.service.Name, fmt.Sprintf("caught signal %s", map[string]string{
+			"signal": q.String()}))
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		err := srv.Shutdown(ctx)
 		if err != nil {
 			shutdownError <- err
 		}
-		// app.logger.PrintInfo("completing background tasks", map[string]string{
-		// 	"addr": srv.Addr,
-		// })
 		a.wg.Wait()
 		shutdownError <- nil
 	}()
-	// s.logger.PrintInfo("starting server", map[string]string{
-	// 	"addr": srv.Addr,
-	// 	"env":  s.cfg.Env,
-	// })
+	a.logRequest(a.service.Name, fmt.Sprintf("starting %s server", a.cfg.env))
 	err := srv.ListenAndServe()
 	if !errors.Is(err, http.ErrServerClosed) {
 		return err
@@ -52,8 +44,6 @@ func (a *api) serve() error {
 	if err != nil {
 		return err
 	}
-	// app.logger.PrintInfo("server stopped", map[string]string{
-	// 	"addr": srv.Addr,
-	// })
+	a.logRequest(a.service.Name, fmt.Sprintf("%s server stopped", a.service.Name))
 	return nil
 }

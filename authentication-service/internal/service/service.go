@@ -7,5 +7,6 @@ import (
 )
 
 type Service struct {
-	DB *sql.DB
+	Name string
+	DB   *sql.DB
 }
